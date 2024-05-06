@@ -1,15 +1,33 @@
 # Laboratorio 2 análisis exploratorio de datos
 
-```{r}
-install.packages(c("dplyr",
-"ggplot2",
-"gridExtra",
-"tidyr",
-"reshape2",
-"RColorBrewer",
-"ggrepel"))
 
+## Estudiantes: A. Badilla Olivas B80874 - Brandon Mora Umaña C15179
+
+
+---
+
+
+## 0. Instalar paquetes
+
+
+Solo es necesario instalar los paquetes una vez, si ya los tiene instalados puede omitir este paso.
+
+
+```{r}
+install.packages(c(
+  "dplyr",
+  "ggplot2",
+  "gridExtra",
+  "tidyr",
+  "reshape2",
+  "RColorBrewer",
+  "ggrepel"
+))
 ```
+
+
+Ahora cargamos los paquetes necesarios para el análisis.
+
 
 ```{r}
 library(dplyr)
@@ -19,202 +37,480 @@ library(tidyr)
 library(reshape2)
 library(RColorBrewer)
 library(ggrepel)
+library(rmarkdown)
+options(width = 80)
 ```
 
+
+En la siguiente sección se carga el archivo de datos.
+
+
 ```{r}
-# Al usar choose() usted puede elegir el archivo sin necesidad de definir la ubicación
-# definir header y encodinmg le ayudan a read.csv a identificar cabeceras y el formato del texto
-df= (read.csv('pokemon.csv', header=T, encoding = "UTF-8"))
+# Al usar choose() usted puede elegir el archivo sin necesidad de definir
+# la ubicación
+# definir header y encodinmg le ayudan a read.csv a
+# identificar cabeceras y el formato del texto
+df <- (read.csv("pokemon.csv", header = TRUE, encoding = "UTF-8"))
 attach(df)
 df$capture_rate <- as.numeric(df$capture_rate)
 # Resumen informativo de los datos - tendencias
 summary(df)
 # definimos el conjunto como una tibble que es una data frame simplificada
-# las tibbles son versiones de dataframes con algunas facilidades de impresión y uso.
-df = tibble::as_tibble(df)
+# las tibbles son versiones de dataframes con algunas facilidades
+# de impresión y uso.
+df <- tibble::as_tibble(df)
 colnames(df)[25] <- "classification"
 
 head(df)
 ```
 
 ```{r}
-df = select(df, 
-            name, 
-            classification, 
-            hp, weight_kg,
-            height_m, speed, 
-            attack, defense,
-            sp_attack,
-            sp_defense,
-            type1,
-            type2,
-            abilities, 
-            generation, 
-            is_legendary,
-            capture_rate)
+df <- select(
+  df,
+  name,
+  classification,
+  hp, weight_kg,
+  height_m, speed,
+  attack, defense,
+  sp_attack,
+  sp_defense,
+  type1,
+  type2,
+  abilities,
+  generation,
+  is_legendary,
+  capture_rate
+)
 head(df)
 ```
 
 ```{r}
-density_plot <- function(data, column , fill_color, color, transparency, title){
-  ggplot(data=data, aes(column)) + geom_density(col=color,fill=fill_color, alpha=transparency) + ggtitle(title)
+density_plot <- function(
+    data, column, fill_color, color,
+    transparency, title, x_label) {
+  ggplot(data = data, aes(column)) +
+    geom_density(col = color, fill = fill_color, alpha = transparency) +
+    ggtitle(title) +
+    labs(x = x_label, y = "Densidad")
 }
 ```
 
+---
+
+
+## 1. Diagramas de densidad
+
+
 ```{r}
-?geom_density
 # el mas sirve para agregarle parametros al plot.
-density_hp <- ggplot(data=df, aes(hp)) + geom_density(col="white",fill="pink", alpha=0.8) + ggtitle("Diagrama de densidad de Hit Points o Vida")
 
-density_speed <- ggplot(data=df, aes(speed)) + geom_density(col="white", fill="darkorchid", alpha=0.8) + ggtitle("Diagrama densidad de caracteristicas de velocidad")
+# Diagrama de densidad de Hit Points o Vida
+density_hp <- ggplot(data = df, aes(hp)) +
+  geom_density(col = "white", fill = "pink", alpha = 0.8) +
+  ggtitle("Diagrama de densidad de Hit Points o Vida") +
+  labs(x = "HP", y = "Densidad")
 
-density_attack <- ggplot(data=df, aes(attack)) + geom_density(col="white", fill="orange", alpha=0.7) + ggtitle("Diagrama densidad de caracteristicas ofensivas")
+# Diagrama densidad de características de velocidad
+density_speed <- ggplot(data = df, aes(speed)) +
+  geom_density(col = "white", fill = "darkorchid", alpha = 0.8) +
+  ggtitle("Diagrama densidad de características de velocidad") +
+  labs(x = "Velocidad", y = "Densidad")
 
-density_defense <- ggplot(data=df, aes(defense)) + geom_density(col="white", fill="firebrick", alpha=0.7) + ggtitle("Diagrama densidad de caracteristicas defensivas")
+# Diagrama densidad de características ofensivas
+density_attack <- ggplot(data = df, aes(attack)) +
+  geom_density(col = "white", fill = "orange", alpha = 0.7) +
+  ggtitle("Diagrama densidad de características ofensivas") +
+  labs(x = "Ataque", y = "Densidad")
 
-density_height <- ggplot(data=df, aes(height_m)) + geom_density(col="white", fill="tan3", alpha=0.7) + ggtitle("Diagrama densidad de caracteristicas ofensivas")
+# Diagrama densidad de características defensivas
+density_defense <- ggplot(data = df, aes(defense)) +
+  geom_density(col = "white", fill = "firebrick", alpha = 0.7) +
+  ggtitle("Diagrama densidad de características defensivas") +
+  labs(x = "Defensa", y = "Densidad")
 
-density_weight <- density_plot(data=df, column=weight_kg, fill_color="gray", color='white', transparency=0.8, title="Diagrama densidad de caracteristicas peso")
+# Diagrama densidad de características de altura
+density_height <- ggplot(data = df, aes(height_m)) +
+  geom_density(col = "white", fill = "tan3", alpha = 0.7) +
+  ggtitle("Diagrama densidad de características de altura") +
+  labs(x = "Altura (m)", y = "Densidad")
 
-grid.arrange(density_hp, density_speed, density_attack, density_defense, density_weight, density_height, ncol=2)
+# Diagrama densidad de características de peso
+density_weight <- density_plot(
+  data = df,
+  column = weight_kg,
+  fill_color = "gray",
+  color = "white",
+  transparency = 0.8,
+  title = "Diagrama densidad de características peso",
+  x_label = "Peso (kg)"
+)
+
+# Organizar los gráficos en una cuadrícula
+grid.arrange(density_hp, density_speed, density_attack,
+  density_defense, density_weight, density_height,
+  ncol = 2
+)
 ```
 
+
+---
+
+
+## 2. Gráficos de barras
+
+
 ```{r}
-ggplot(data=df, aes(type1)) + geom_bar(aes(fill=..count..), alpha=0.8) + theme(axis.text.x =element_text(angle = 90, hjust = 0)) + ggtitle("Distribucion basados en Type-1") + coord_flip()
+# ---- Primer gráfico ----
 
-ggplot(data=df, aes(type2)) + geom_bar(aes(fill=..count..), alpha=0.8) + theme(axis.text.x =element_text(angle = 90, hjust = 0)) + ggtitle("Distribucion basados en Type-2") + coord_flip()
+# Gráfico de barras para la distribución de Type-1
+ggplot(data = df, aes(type1)) +
+  geom_bar(aes(fill = ..count..), alpha = 0.8) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0)) +
+  ggtitle("Distribución basados en Type-1") +
+  coord_flip() + # Intercambia los ejes x e y
+  labs(x = "Tipo 1", y = "Frecuencia")
 
+# ---- Segundo gráfico ----
 
+# Gráfico de barras para la distribución de Type-2
+ggplot(data = df, aes(type2)) +
+  geom_bar(aes(fill = ..count..), alpha = 0.8) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0)) +
+  ggtitle("Distribución basados en Tipo-2") +
+  coord_flip()
 ```
 
 ```{r}
 df %>%
-  filter(is_legendary==1) %>%
-  ggplot(aes(type1)) + geom_bar(aes(fill= ..count..)) + theme(axis.text.x = element_text(angle=90, hjust=0)) + ggtitle("Numero de Pokemon Legendarios usando Type-1")
+  filter(is_legendary == 1) %>%
+  ggplot(aes(type1)) +
+  geom_bar(aes(fill = ..count..)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0)) +
+  ggtitle("Numero de Pokemon Legendarios usando Tipo-1")
 ```
+
+
+## Comentarios sobre los gráficos de barras
+
+
+Podemos observar que los pokemon tipo agua son los más frequentes del tipo 1 en normales. Para los legendarios es psíquico. 
+
+
+---
+
+
+## 3. Gráficos de dispersión
+
 
 ```{r}
-ggplot(data=df, aes(attack, defense)) + geom_point(aes(color=is_legendary), alpha=0.8) +
-scale_color_gradient(low="darkblue", high="red") + ggtitle("Contraste Caracteristicas de
-Defensa vs Ataque") +
-geom_label_repel(data=subset(df,attack > 150 | defense >150 | attack < 25), aes(label=name),
-box.padding = 0.35, point.padding = 0.5,
-segment.color = 'grey50')
+# Creamos la base del gráfico
+ggplot(data = df, aes(x = attack, y = defense)) +
+
+  # Añadimos puntos con color según legendario o no
+  geom_point(aes(color = is_legendary), alpha = 0.8) +
+
+  # Creamos una escala de color degradado
+  scale_color_gradient(low = "darkblue", high = "red") +
+
+  # Título del gráfico
+  ggtitle("Contraste Características de Defensa vs Ataque") +
+
+  # Añadimos etiquetas de algunos Pokémon
+  geom_label_repel(
+    data = subset(df, attack > 150 | defense > 150 | attack < 25),
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  labs(x = "Ataque", y = "Defensa")
 ```
+
+
+## Comentarios sobre el gráfico de dispersión
+
+
+Podemos observar que los Pokémon legendarios tienden a tener valores más altos en las características de ataque y defensa. 
+A continuación, se presentan gráficos de dispersión que comparan las características de ataque con velocidad, peso, altura y HP.
+
 
 ```{r}
-ggplot(na.omit(df), aes(attack, speed)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, (attack > 170 | attack < 50 & speed >150 | speed < 50) & is_legendary == 1 | speed > 145), aes(label=name),box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50') + geom_smooth(method =
-"lm") + labs(x = 'Attack', y = 'Speed')
+## Gráfico: Ataque vs Velocidad
+ggplot(df, aes(attack, speed)) +
+  # Los puntos representan Pokémon, coloreados según sean legendarios o no
+  geom_point(aes(color = is_legendary)) +
+  # Etiquetas para destacar Pokémon específicos
+  geom_label_repel(
+    data = subset(df, (attack > 170 | attack < 50 & speed > 150 | speed < 50) & is_legendary == 1 | speed > 145),
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  # Línea de tendencia
+  geom_smooth(method = "lm") +
+  #  Etiquetas de los ejes
+  labs(x = "Ataque", y = "Velocidad")
 
-ggplot(na.omit(df), aes(attack, weight_kg)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, (attack > 170 | attack
-< 50 | weight_kg > 650) & (is_legendary == 1)), aes(label=name), box.padding = 0.35,
-point.padding = 0.5, segment.color = 'grey50') + geom_smooth(method = "lm") + labs(x = 'Attack', y = 'Weight')
+## Gráfico: Ataque vs Peso
+ggplot(df, aes(attack, weight_kg)) +
+  geom_point(aes(color = is_legendary)) +
+  geom_label_repel(
+    data = subset(df, (attack > 170 | attack < 50 | weight_kg > 650) & (is_legendary == 1)),
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  geom_smooth(method = "lm") +
+  labs(x = "Ataque", y = "Peso")
 
-ggplot(na.omit(df), aes(attack, height_m)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, ((attack > 170 | attack
-< 50 | height_m > 7.5) & is_legendary == 1) | height_m > 5 & is_legendary == 0),
-aes(label=name), box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50') +
-geom_smooth(method = "lm") + labs(x = 'Attack', y = 'Height')
+## Gráfico: Ataque vs Altura
+ggplot(df, aes(attack, height_m)) +
+  geom_point(aes(color = is_legendary)) +
+  geom_label_repel(
+    data = subset(df, ((attack > 170 | attack < 50 | height_m > 7.5) & is_legendary == 1) | height_m > 5 & is_legendary == 0),
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  geom_smooth(method = "lm") +
+  labs(x = "Ataque", y = "Altura")
 
-ggplot(na.omit(df), aes(attack, hp)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, ((attack > 170 | hp >
-190 | attack < 50) & is_legendary == 1) | hp >160), aes(label=name), box.padding = 0.35,
-point.padding = 0.5, segment.color = 'grey50') + geom_smooth(method = "lm") + labs(x = 'Attack', y = 'HP')
+## Gráfico: Ataque vs HP
+ggplot(df, aes(attack, hp)) +
+  geom_point(aes(color = is_legendary)) +
+  geom_label_repel(
+    data = subset(df, ((attack > 170 | hp > 190 | attack < 50) & is_legendary == 1) | hp > 160),
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  geom_smooth(method = "lm") +
+  labs(x = "Ataque", y = "HP")
 ```
+
+
+## Comentarios sobre los gráficos de dispersión
+
+
+Podemos observar que a medida que aumenta el ataque, aumentan la velocidad, el peso y la altura. Tambien Cosmog y Cosmoem tienen un peso, altura y HP muy bajos en comparacion con otros.
+
 
 ```{r}
 speed_defense_legendary <- ggplot(na.omit(df), aes(defense, speed)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, (defense > 170 | defense
-< 50 & speed >150 | speed < 50) & is_legendary == 1 | speed > 145), aes(label=name),
-box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50') + geom_smooth(method =
-"lm")
+  # Base del gráfico: Defensa en el eje x, Velocidad en el eje y
+  geom_point(aes(color = is_legendary)) +
+  # Puntos que representan cada Pokémon, coloreados según sean o no legendarios
+  geom_label_repel(
+    data = subset(df, (defense > 170 | defense < 50 & speed > 150 | speed < 50) &
+      is_legendary == 1 | speed > 145),
+    # Filtrado: Pokémon con defensa alta o baja, velocidad extrema y legendarios
+    # además de incluir algunos con sólo alta velocidad.
+    aes(label = name),
+    # Usa la columna 'name' como etiqueta
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50" # Ajuste de espaciado y color de segmentos
+  ) +
+  geom_smooth(method = "lm") + # Agrega una línea de tendencia lineal
+  labs(x = "Defensa", y = "Velocidad") # Etiquetas de ejes específicas para este gráfico.
 
 weight_defense_legendary <- ggplot(na.omit(df), aes(defense, weight_kg)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, (defense > 170 | defense
-< 50 | weight_kg > 650) & (is_legendary == 1)), aes(label=name), box.padding = 0.35,
-point.padding = 0.5, segment.color = 'grey50') + geom_smooth(method = "lm")
+  geom_point(aes(color = is_legendary)) +
+  geom_label_repel(
+    data = subset(df, (defense > 170 | defense < 50 | weight_kg > 650) &
+      (is_legendary == 1)),
+    # Filtra: Defensa extrema, peso muy alto, y sólo legendarios
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  geom_smooth(method = "lm") +
+  labs(x = "Defensa", y = "Peso") # Etiquetas de ejes específicas para este gráfico.
+
 
 height_defense_legendary <- ggplot(na.omit(df), aes(defense, height_m)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, ((defense > 170 | defense
-< 50 | height_m > 7.5) & is_legendary == 1) | height_m > 5 & is_legendary == 0),
-aes(label=name), box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50') +
-geom_smooth(method = "lm")
+  geom_point(aes(color = is_legendary)) +
+  geom_label_repel(
+    data = subset(df, ((defense > 170 | defense < 50 | height_m > 7.5) &
+      is_legendary == 1) |
+      (height_m > 5 & is_legendary == 0)),
+    # Filtra: Defensa extrema, altura extrema y legendarios, o altura alta y no legendarios
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  geom_smooth(method = "lm") +
+  labs(x = "Defensa", y = "Altura")
 
 hp_defense_legendary <- ggplot(na.omit(df), aes(defense, hp)) +
-geom_point(aes(color=is_legendary)) + geom_label_repel(data=subset(df, ((defense > 170 | hp > 190 | defense < 50) & is_legendary == 1) | hp >160), aes(label=name), box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50') + geom_smooth(method = "lm")
+  geom_point(aes(color = is_legendary)) +
+  geom_label_repel(
+    data = subset(df, ((defense > 170 | hp > 190 | defense < 50) &
+      is_legendary == 1) |
+      (hp > 160)),
+    # Filtra: Defensa extrema, HP alto y legendarios, o HP alto y no legendarios
+    aes(label = name),
+    box.padding = 0.35,
+    point.padding = 0.5,
+    segment.color = "grey50"
+  ) +
+  geom_smooth(method = "lm") +
+  labs(x = "Defensa", y = "HP")
 
-grid.arrange(speed_defense_legendary, weight_defense_legendary, height_defense_legendary,
-hp_defense_legendary, ncol = 2)
+
+grid.arrange(speed_defense_legendary, weight_defense_legendary,
+  height_defense_legendary, hp_defense_legendary,
+  ncol = 2
+)
+# Muestra los gráficos en una cuadrícula de dos columnas
 ```
 
+## Comentarios sobre los gráficos de dispersión
+
+
+Podemos observar que tanto peso como altura estan ligeramente correlacionadas con defensa, mientras que HP y velocidad no parecen estarlo.
+
+
+
+---
+
+
+# 4. Gráficos de caja
+
+
 ```{r}
-box_plot_attr <- select(df, type1, is_legendary, hp, defense, attack, sp_attack, sp_defense,
-speed)
+# Seleccionamos las columnas que nos interesan
+box_plot_attr <- select(
+  df, type1, is_legendary, hp, defense, attack, sp_attack, sp_defense,
+  speed
+)
+# Filtramos los datos para obtener solo los legendarios
 box_plot_attr_leg <- filter(box_plot_attr, is_legendary == 1)
 box_plot_attr_nor <- filter(box_plot_attr, is_legendary == 0)
-box_plot_attr_leg_long <- gather(box_plot_attr_leg, attribute, value, -c(type1,
-is_legendary))
-box_plot_attr_nor_long <- gather(box_plot_attr_nor, attribute, value, -c(type1,
-is_legendary))
+box_plot_attr_leg_long <- gather(box_plot_attr_leg, attribute, value, -c(
+  type1,
+  is_legendary
+))
+
+box_plot_attr_nor_long <- gather(box_plot_attr_nor, attribute, value, -c(
+  type1,
+  is_legendary
+))
+# Creamos el gráfico de caja para los no legendarios y legendarios
 bp_leg <- ggplot(data = box_plot_attr_leg_long, aes(attribute, value)) +
-geom_boxplot(fill="green4") + ggtitle("Pokemon Legendario")
-bp_nor <- ggplot(data = box_plot_attr_nor_long, aes(attribute, value)) + geom_boxplot(fill
-= "yellow2") + ggtitle("Pokemon Normal")
-grid.arrange(bp_leg, bp_nor,ncol=2)
+  geom_boxplot(fill = "green4") +
+  ggtitle("Pokemon Legendario") +
+  labs(x = "Atributo", y = "Valor")
+bp_nor <- ggplot(data = box_plot_attr_nor_long, aes(attribute, value)) +
+  geom_boxplot(
+    fill = "yellow2"
+  ) +
+  ggtitle("Pokemon Normal") +
+  labs(x = "Atributo", y = "Valor")
+# Organizamos los gráficos en una cuadrícula
+grid.arrange(bp_leg, bp_nor, ncol = 2)
 ```
 
+
+## Comentarios sobre los gráficos de caja
+
+
+Podemos observar que los Pokémon legendarios tienen menos valores atípicos en comparación con los Pokémon normales. Además, los Pokémon legendarios tienden a tener valores más altos en las características de ataque, defensa, ataque especial, defensa especial y velocidad.
+
+
+---
+
+
+# 5. Mapas de calor
+
+
 ```{r}
-hmap_attr <- select(df, type1, is_legendary, hp, defense, attack, sp_attack, sp_defense, speed)
+hmap_attr <- select(
+  df, type1, is_legendary, hp,
+  defense, attack, sp_attack, sp_defense, speed
+)
 
 hmap_attr_leg <- filter(hmap_attr, is_legendary == 1)
 
 hmap_attr_leg <- group_by(hmap_attr_leg, type1)
 
-hmap_attr_leg <- summarise(hmap_attr_leg, hp=median(hp), attack=median(attack),
-defense=median(defense), sp_attack=median(sp_attack), sp_defense=median(sp_defense),
-speed=median(speed))
+hmap_attr_leg <- summarise(hmap_attr_leg,
+  hp = median(hp), attack = median(attack),
+  defense = median(defense), sp_attack = median(sp_attack),
+  sp_defense = median(sp_defense),
+  speed = median(speed)
+)
 
 hmap_attr_leg_m <- melt(hmap_attr_leg)
 
-hm.palette <- colorRampPalette(rev(brewer.pal(5, 'RdYlBu')), space='Lab')
+hm_palette <- colorRampPalette(rev(brewer.pal(5, "RdYlBu")), space = "Lab")
 
-ggplot(data=hmap_attr_leg_m, aes(type1, variable)) + geom_tile(aes(fill=value)) +
-ggtitle("Legendary Pokemon: Type1 - Attribute") + scale_fill_gradientn(colours =
-hm.palette(100)) + theme(axis.text.x = element_text(angle=90, hjust=0)) + coord_equal()
+ggplot(data = hmap_attr_leg_m, aes(type1, variable)) +
+  geom_tile(aes(fill = value)) +
+  ggtitle("Pokemon Legendario: Tipo 1 - Atributo") +
+  scale_fill_gradientn(
+    colours =
+      hm_palette(100)
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0)) +
+  coord_equal() +
+  labs(x = "Tipo 1", y = "Atributo")
 ```
-
+Podemos observar que los pokemon legendarios de tipo tierra tiene valores de ataque altos, los hielo tienen defensa especial alta.
 ```{r}
-hmap_attr <- select(df, type1, is_legendary, hp, defense, attack, sp_attack, sp_defense, speed)
+hmap_attr <- select(
+  df, type1, is_legendary, hp, defense, attack,
+  sp_attack, sp_defense, speed
+)
 
 hmap_attr_nor <- filter(hmap_attr, is_legendary == 0)
 
 hmap_attr_nor <- group_by(hmap_attr_nor, type1)
 
-hmap_attr_nor <- summarise(hmap_attr_nor, hp=median(hp), attack=median(attack),
-defense=median(defense), sp_attack=median(sp_attack), sp_defense=median(sp_defense),
-speed=median(speed))
+hmap_attr_nor <- summarise(hmap_attr_nor,
+  hp = median(hp), attack = median(attack),
+  defense = median(defense), sp_attack = median(sp_attack),
+  sp_defense = median(sp_defense),
+  speed = median(speed)
+)
 
 hmap_attr_nor_m <- melt(hmap_attr_nor)
 
-hm.palette <- colorRampPalette(rev(brewer.pal(5, 'RdYlBu')), space='Lab')
+hm_palette <- colorRampPalette(rev(brewer.pal(5, "RdYlBu")), space = "Lab")
 
-ggplot(data=hmap_attr_nor_m, aes(type1, variable)) + geom_tile(aes(fill=value)) +
-ggtitle("Normal Pokemon: Type1 - Attribute") + scale_fill_gradientn(colours =
-hm.palette(100)) + theme(axis.text.x = element_text(angle=90, hjust=0)) + coord_equal()
+ggplot(data = hmap_attr_nor_m, aes(type1, variable)) +
+  geom_tile(aes(fill = value)) +
+  ggtitle("Pokemon Normal: Tipo 1 - Atributo") +
+  scale_fill_gradientn(
+    colours =
+      hm_palette(100)
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0)) +
+  coord_equal() +
+  labs(x = "Tipo 1", y = "Atributo")
 ```
-
 ```{r}
-hmap_attr <- select(df, type1, is_legendary, hp, defense, attack, sp_attack, sp_defense, speed)
+hmap_attr <- select(
+  df, type1, is_legendary, hp, defense,
+  attack, sp_attack, sp_defense, speed
+)
 
 hmap_attr_leg <- filter(hmap_attr, is_legendary == 1)
 
 hmap_attr_leg <- group_by(hmap_attr_leg, type1)
 
-hmap_attr_leg <- summarise(hmap_attr_leg, hp=median(hp), attack=median(attack),
-defense=median(defense), sp_attack=median(sp_attack), sp_defense=median(sp_defense),
-speed=median(speed))
+hmap_attr_leg <- summarise(hmap_attr_leg,
+  hp = median(hp), attack = median(attack),
+  defense = median(defense), sp_attack = median(sp_attack),
+  sp_defense = median(sp_defense),
+  speed = median(speed)
+)
 
 row.names(hmap_attr_leg) <- hmap_attr_leg$type1
 
@@ -226,23 +522,35 @@ hmap_attr_leg_cor <- cor(hmap_attr_leg)
 
 hmap_attr_leg_cor_m <- melt(hmap_attr_leg_cor)
 
-hm.palette <- colorRampPalette(rev(brewer.pal(5, 'GnBu')), space='Lab')
+hm_palette <- colorRampPalette(rev(brewer.pal(5, "GnBu")), space = "Lab")
 
-ggplot(data=hmap_attr_leg_cor_m, aes(Var1, Var2)) + geom_tile(aes(fill=value)) +
-ggtitle("Correlación de Atributos - Legendarios") + scale_fill_gradientn(colours =
-hm.palette(100)) + coord_equal() + labs (x = '', y = '')
+ggplot(data = hmap_attr_leg_cor_m, aes(Var1, Var2)) +
+  geom_tile(aes(fill = value)) +
+  ggtitle("Correlación de Atributos - Legendarios") +
+  scale_fill_gradientn(
+    colours =
+      hm_palette(100)
+  ) +
+  coord_equal() +
+  labs(x = "", y = "")
 ```
 
 ```{r}
-hmap_attr <- select(df, type1, is_legendary, hp, defense, attack, sp_attack, sp_defense, speed)
+hmap_attr <- select(
+  df, type1, is_legendary, hp,
+  defense, attack, sp_attack, sp_defense, speed
+)
 
 hmap_attr_nor <- filter(hmap_attr, is_legendary == 0)
 
 hmap_attr_nor <- group_by(hmap_attr_nor, type1)
 
-hmap_attr_nor <- summarise(hmap_attr_nor, hp=median(hp), attack=median(attack),
-defense=median(defense), sp_attack=median(sp_attack), sp_defense=median(sp_defense),
-speed=median(speed))
+hmap_attr_nor <- summarise(hmap_attr_nor,
+  hp = median(hp), attack = median(attack),
+  defense = median(defense), sp_attack = median(sp_attack),
+  sp_defense = median(sp_defense),
+  speed = median(speed)
+)
 
 row.names(hmap_attr_nor) <- hmap_attr_nor$type1
 
@@ -254,17 +562,22 @@ hmap_attr_nor_cor <- cor(hmap_attr_nor)
 
 hmap_attr_nor_cor_m <- melt(hmap_attr_nor_cor)
 
-hm.palette <- colorRampPalette(rev(brewer.pal(5, 'GnBu')), space='Lab')
+hm_palette <- colorRampPalette(rev(brewer.pal(5, "GnBu")), space = "Lab")
 
-ggplot(data=hmap_attr_nor_cor_m, aes(Var1, Var2)) + geom_tile(aes(fill=value)) +
-ggtitle("Correlación de Atributos - Normales") + scale_fill_gradientn(colours =
-hm.palette(100)) + coord_equal() + labs (x = '', y = '')
+ggplot(data = hmap_attr_nor_cor_m, aes(Var1, Var2)) +
+  geom_tile(aes(fill = value)) +
+  ggtitle("Correlación de Atributos - Normales") +
+  scale_fill_gradientn(
+    colours =
+      hm_palette(100)
+  ) +
+  coord_equal() +
+  labs(x = "", y = "")
 ```
-
 ```{r}
-df= (read.csv(file.choose(), header=T, encoding = "UTF-8"))
+df <- (read.csv("pokemon.csv", header = TRUE, encoding = "UTF-8"))
 attach(df)
-df = tibble::as_tibble(df)
+df <- tibble::as_tibble(df)
 colnames(df)[25] <- "classification"
 df$capture_rate <- as.numeric(df$capture_rate)
 ```
@@ -294,12 +607,30 @@ df_fight_against_summ <- summarise(df_fight_against_g,
   against_psychic = median(against_psychic),
   against_rock = median(against_rock),
   against_steel = median(against_steel),
-  against_water = median(against_water))
+  against_water = median(against_water)
+)
 
 df_fight_against_long <- melt(df_fight_against_summ)
-hm.palette <- colorRampPalette(rev(brewer.pal(9, 'RdYlBu')), space='Lab')
-ggplot(data=df_fight_against_long, aes(type1, variable)) + geom_tile(aes(fill=value)) +
-scale_fill_gradientn(colours = hm.palette(100)) + coord_equal() +
-theme(axis.text.x=element_text(angle=90, hjust=0)) + ggtitle("Efectividad por tipo de
-Pokemon")
+hm_palette <- colorRampPalette(rev(brewer.pal(9, "RdYlBu")), space = "Lab")
+ggplot(data = df_fight_against_long, aes(type1, variable)) +
+  geom_tile(aes(fill = value)) +
+  scale_fill_gradientn(colours = hm_palette(100)) +
+  coord_equal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0)) +
+  ggtitle("Efectividad por tipo de
+Pokemon") +
+  labs(x = "Tipo 1", y = "Contra")
 ```
+
+
+## Comentarios sobre los mapas de calor
+
+
+En este mapa de calor de la correlación de los atributos de los pokemon legendarios podemos ver que la defensa especial esta negativamente correlacionada con la velocidad y el ataque.
+
+
+En el mapa de calor de la correlación de los atributos de los pokemon normales podemos ver que la defensa especial esta negativamente correlacionada con la velocidad y el defensa, tambien una muy fuerte negativa entre ataque especial y ataque.
+En el caso de los pokemon normales podemos observar que los de tipo hierro tienen mucha defensa, los de tipo luchador tienen mucho ataque y los de tipo fantasma tienen suficiente defensa especial.
+
+
+Se puede observar que los Pokemon de tipo hielo son muy efectivos contra los de tipo volador. 
