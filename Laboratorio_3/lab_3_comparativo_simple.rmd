@@ -1,0 +1,272 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+install.packages(c(
+  " dplyr",
+    "car",
+    "effsize",
+    "tidyverse",
+    "ggplot2",
+    "gridExtra",
+    "tidyr",
+    "reshape2",
+    "RColorBrewer",
+    "ggrepel"
+))
+```
+
+## CI0131 Diseño de experimentos - Laboratorio - I Ciclo 2024 
+
+## T-test: Comparación de medias independientes
+
+### Integrantes: 
+
+* A. Badilla Olivas B80874 
+* Brandon Mora Umaña C15179 
+
+
+## Introducción
+En este laboratorio, vamos a analizar el conjunto de datos `nacim.csv` para determinar si existen diferencias significativas en el peso de los bebés al nacer en función del sexo del bebé y si el bebé fue prematuro. Para esto, realizaremos un t-test de dos muestras para cada caso.
+
+## A.  Peso del bebé en función del sexo
+
+### 1. Cargar datos y librerías
+Primero, cargamos las librerías necesarias y el conjunto de datos `nacim.csv`.
+```{r}
+library(tidyverse)
+library(car)
+library(effsize)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(tidyr)
+library(reshape2)
+library(RColorBrewer)
+library(ggrepel)
+library(rmarkdown)
+options(width = 80)
+
+nacim <- read.csv("Laboratorio_3/nacim.csv", header=TRUE, stringsAsFactors=TRUE)
+head(nacim, 10)
+```
+
+### 2. Hipótesis
+Establecemos las hipótesis nula y alternativa:
+
+*   **H0**: No hay diferencia en el peso promedio al nacer entre bebés de sexo masculino y femenino.
+*   **HA**: Existe una diferencia en el peso promedio al nacer entre bebés de sexo masculino y femenino.
+
+### 3. Parámetro estimado (estadístico)
+Calculamos la diferencia entre las medias muestrales del peso de los bebés de sexo masculino y femenino.
+
+```{r}
+male   <- nacim %>% filter(sex_baby == "male") %>% pull(weight)
+female <- nacim %>% filter(sex_baby == "female") %>% pull(weight)
+
+mean(male) - mean(female)
+```
+
+### 4. Validar las condiciones para aplicar un t-test
+
+#### 4.1. Independencia:
+Se asume que los datos son independientes ya que se trata de un muestreo aleatorio.
+
+#### 4.2. Normalidad:
+Evaluamos la normalidad de la variable `weight` para cada sexo utilizando histogramas, gráficos Q-Q y la prueba de Shapiro-Wilk.
+
+##### Histogramas
+```{r}
+ggplot(nacim,aes(x = weight)) +
+  geom_histogram(aes(y = ..density.., colour = sex_baby)) +
+  facet_grid(.~ sex_baby) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+##### Gráficos Q-Q
+```{r}
+par(mar = c(2, 2, 2, 2))
+par(mfrow = c(1, 2))
+
+qqnorm(male, xlab = "", ylab = "",
+       main = "male", col = "firebrick")
+qqline(male)
+
+qqnorm(female, xlab = "", ylab = "",
+       main = "female", col = "springgreen4")
+qqline(female)
+```
+
+##### Prueba de Shapiro-Wilk
+```{r}
+shapiro.test(male)
+shapiro.test(female)
+```
+
+**Conclusión de Normalidad:** 
+Los gráficos Q-Q muestran que la distribución del peso de los bebés se desvía ligeramente de la normalidad, especialmente en el caso de las mujeres. La prueba de Shapiro-Wilk confirma esta desviación, ya que el valor p es menor que 0.05 en ambos casos, rechazando la hipótesis nula de normalidad.
+
+**Nota:** A pesar de que no se cumple la condición de normalidad, para efectos del ejercicio, continuaremos con el t-test. Es importante mencionar esta desviación en las conclusiones. 
+
+#### 4.3. Igualdad de Varianza
+Evaluamos la homogeneidad de varianzas utilizando la prueba de Fligner-Killeen y la prueba de Levene.
+
+##### Gráfico de cajas
+```{r}
+ggplot(data = nacim) +
+  geom_boxplot(aes(x = sex_baby, y = weight, colour = sex_baby)) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+##### Pruebas estadísticas
+```{r}
+fligner.test(weight ~ sex_baby, data = nacim)
+leveneTest(weight ~ sex_baby, data = nacim, center = "median")
+```
+
+**Conclusión de  Igualdad de Varianza:**
+Ni la prueba de Fligner-Killeen ni la prueba de Levene encontraron evidencia significativa de que las varianzas sean diferentes entre ambos grupos. 
+
+### 5. Determinar el tipo de test
+Utilizaremos un t-test de dos colas, ya que estamos interesados en determinar si hay una diferencia en el peso promedio al nacer, sin especificar una dirección.
+
+### 6. Determinar el nivel de significancia
+Establecemos el nivel de significancia en α = 0.05.
+
+### 7. Cálculo de p-value
+Realizamos el t-test de dos muestras utilizando la función `t.test()`.
+```{r}
+t.test(
+  x = male,
+  y = female,
+  alternative = "two.sided",
+  mu = 0,
+  var.equal = TRUE,
+  conf.level = 0.95
+)
+```
+
+### 8. Cálculo del tamaño del efecto
+Calculamos la d de Cohen para evaluar el tamaño del efecto.
+
+```{r}
+cohen.d(formula = weight ~ sex_baby, data = nacim, paired = FALSE)
+```
+
+
+### 9. Conclusiones. Análisis de resultados
+
+El p-value (0.204) es mayor que α (0.05), por lo que no se dispone de evidencia suficiente para rechazar la hipótesis nula. Esto significa que no hay evidencia de una diferencia significativa en el peso promedio al nacer entre bebés de sexo masculino y femenino.
+
+El tamaño del efecto, medido con la d de Cohen, es pequeño (0.18), lo que indica que la diferencia observada entre los grupos es pequeña, incluso si fuera estadísticamente significativa.
+
+## B. Peso del bebé en función de si fue prematuro
+
+### 1. Hipótesis
+Establecemos las hipótesis nula y alternativa:
+
+*   **H0**: No hay diferencia en el peso promedio al nacer entre bebés prematuros y no prematuros.
+*   **HA**: Existe una diferencia en el peso promedio al nacer entre bebés prematuros y no prematuros.
+
+### 2. Parámetro estimado (estadístico)
+Calculamos la diferencia entre las medias muestrales del peso de los bebés prematuros y no prematuros.
+
+```{r}
+premature   <- nacim %>% filter(premature == "premie") %>% pull(weight)
+fullterm <- nacim %>% filter(premature == "full term") %>% pull(weight)
+
+mean(fullterm) - mean(premature)
+```
+
+### 3. Validar las condiciones para aplicar un t-test
+
+#### 3.1. Independencia:
+Se asume que los datos son independientes ya que se trata de un muestreo aleatorio.
+
+#### 3.2. Normalidad:
+Evaluamos la normalidad de la variable `weight` para bebés prematuros y no prematuros utilizando histogramas, gráficos Q-Q y la prueba de Shapiro-Wilk.
+
+##### Histogramas
+```{r}
+ggplot(nacim,aes(x = weight)) +
+  geom_histogram(aes(y = ..density.., colour = premature)) +
+  facet_grid(.~ premature) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+##### Gráficos Q-Q
+```{r}
+par(mar = c(2, 2, 2, 2))
+par(mfrow = c(1, 2))
+
+qqnorm(fullterm, xlab = "", ylab = "",
+       main = "fullterm", col = "firebrick")
+qqline(fullterm)
+
+qqnorm(premature, xlab = "", ylab = "",
+       main = "premature", col = "springgreen4")
+qqline(premature)
+```
+
+##### Prueba de Shapiro-Wilk
+```{r}
+shapiro.test(fullterm)
+shapiro.test(premature)
+```
+
+**Conclusión de Normalidad:** 
+Los histogramas muestran una clara desviación de la normalidad en el grupo de bebés prematuros, con una cola más larga hacia la izquierda. Los gráficos Q-Q también muestran desviaciones de la normalidad. La prueba de Shapiro-Wilk confirma esta desviación, ya que el valor p es menor que 0.05 en ambos casos.
+
+**Nota:** A pesar de que no se cumple la condición de normalidad, para efectos del ejercicio, continuaremos con el t-test. Es importante mencionar esta desviación en las conclusiones. 
+
+#### 3.3. Igualdad de Varianza
+Evaluamos la homogeneidad de varianzas utilizando la prueba de Fligner-Killeen y la prueba de Levene.
+
+##### Gráfico de cajas
+```{r}
+ggplot(data = nacim) +
+  geom_boxplot(aes(x = premature, y = weight, colour = premature)) +
+  theme_bw() + theme(legend.position = "none")
+```
+
+##### Pruebas estadísticas
+```{r}
+fligner.test(weight ~ premature, data = nacim)
+leveneTest(weight ~ premature, data = nacim, center = "median")
+```
+
+**Conclusión de  Igualdad de Varianza:**
+Tanto la prueba de Fligner-Killeen como la prueba de Levene rechazan la hipótesis nula de igualdad de varianzas.
+
+### 4. Determinar el tipo de test
+Utilizaremos un t-test de dos colas.
+
+### 5. Determinar el nivel de significancia
+Establecemos el nivel de significancia en α = 0.05.
+
+### 6. Cálculo de p-value
+Realizamos el t-test de dos muestras, considerando que las varianzas no son iguales.
+```{r}
+t.test(
+  x = fullterm,
+  y = premature,
+  alternative = "two.sided",
+  mu = 0,
+  var.equal = FALSE,
+  conf.level = 0.95
+)
+```
+
+### 7. Cálculo del tamaño del efecto
+Calculamos la d de Cohen para evaluar el tamaño del efecto.
+
+```{r}
+cohen.d(formula = weight ~ premature, data = nacim, paired = FALSE)
+```
+
+
+### 8. Conclusiones. Análisis de resultados
+El p-value (2.2e-16) es mucho menor que α (0.05), por lo que rechazamos la hipótesis nula. Esto significa que hay evidencia de una diferencia significativa en el peso promedio al nacer entre bebés prematuros y no prematuros.
+
+El tamaño del efecto, medido con la d de Cohen, es grande (1.72), lo que indica una diferencia sustancial en el peso promedio al nacer entre los dos grupos.
+
+**Nota:** La validez de los resultados del t-test se ve afectada por la falta de normalidad en la distribución del peso de los bebés prematuros y la diferencia en las varianzas entre los grupos. Sería prudente considerar análisis adicionales, como pruebas no paramétricas o métodos de bootstrapping, para confirmar estos hallazgos.
