@@ -2,7 +2,14 @@
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Laboratorio: ANOVA de una vía
+# CI0131 Diseño de experimentos - Laboratorio - I Ciclo 2024
+
+## Laboratorio: ANOVA de una vía
+
+### Integrantes:
+
+-   A. Badilla Olivas B80874
+-   Brandon Mora Umaña C15179
 
 ## Introducción
 
@@ -16,7 +23,9 @@ El análisis se llevará a cabo en R, utilizando el paquete "tidyverse".
 
 ## Análisis
 
-### 1. Cargar los datos y convertir la variable "producto" a factor
+### A. Cargar los datos, Revisar Primeras 6 Filas
+
+Cargamos los datos, revimos los primeros datos y vemos también un resumen de estos.
 
 ```{r}
 # Cargar los datos
@@ -24,12 +33,18 @@ Insect <- read.csv("Insect.csv", header = TRUE, encoding = "UTF-8")
 
 # Convertir la variable "producto" a factor
 Insect$producto <- as.factor(Insect$producto)
+# Revisar las primeras 6 filas
+head(Insect)
+```
 
+```{r}
 # Verificar que la variable "producto" es un factor
 summary(Insect)
 ```
 
-### 2. Explorar los datos
+### B. Media, Desviación Estandar y Diagrama de Cajas
+
+Ahora exploramos la desviación estandar y la media de cada uno de los insecticidas. Así mismo, realizamos un diagrama de cajas para ver las diferencias.
 
 ```{r}
 # Cargar el paquete dplyr
@@ -40,18 +55,25 @@ Insect %>%
   group_by(producto) %>%
   summarise(media = mean(contador),
             desviacion_estandar = sd(contador))
-
-# Crear un diagrama de cajas para cada insecticida
-boxplot(contador ~ producto,
-        data = Insect,
-        main = "Conteo de insectos muertos por insecticida",
-        xlab = "Insecticida",
-        ylab = "Conteo de insectos muertos",
-        col = "steelblue",
-        border = "black")
 ```
 
-### 3. Ajustar el modelo ANOVA de una vía
+```{r}
+# Crear un diagrama de cajas para cada insecticida
+colores_insecticidas <- c("skyblue", "lightcoral", "gold")
+
+boxplot(contador ~ producto,
+       data = Insect,
+       main = "Conteo de insectos muertos por insecticida",
+       xlab = "Insecticida",
+       ylab = "Conteo de insectos muertos",
+       col = colores_insecticidas, # Usamos nuestro vector de colores
+       border = "black")
+
+```
+
+### C. Ajustar el modelo ANOVA de una vía
+
+Proseguimos a ajustar el modelo anova de una vía a los datos de los insecticidas. Especificamente, establecemos la relación contador \~ producto.
 
 ```{r}
 # Ajustar el modelo ANOVA de una vía
@@ -61,61 +83,53 @@ modelo <- aov(contador ~ producto, data = Insect)
 summary(modelo)
 ```
 
-### 4. Verificar los supuestos del modelo
+Se puede ver que el valor p es bastante bajo. Sería significativo para 0.05 como lo indica el modelo anova al imprimirlo con summary.
+
+### D. Comprobar los Supuestos del Modelo
+
+En esta sección revisamos los supuestos del modelo, para ello primero utilizamos la función plot sobre el modelo para ver los gráficos de fitted vs Residuals y el gráfico QQ. Así también, hacemos una prueba Levene para verificar la igualdad de varianzas y un test Shapiro-Wilk para verificar la normalidad de los datos.
 
 ```{r}
 # Graficar los residuos del modelo
 plot(modelo)
+```
 
+```{r}
 # Realizar la prueba de Levene para la igualdad de varianzas
 library(car)
 leveneTest(contador ~ producto, data = Insect)
+```
 
+```{r}
 # Realizar la prueba de Shapiro-Wilk para la normalidad de los residuos
 shapiro.test(modelo$residuals)
 ```
 
-### 5. Realizar pruebas post hoc
+El valor de la pruebas llevan a no rechazar las hipotesis nulas de cada prueba, es decir, se cumple igualdad de varianzas y que los datos sean normales.
+
+### E. Realizar pruebas post hoc TukeyHSD y graficarlo
+
+Realizamos pruebas post hoc para ver que grupos de tratamiento tienen diferencias entre sí. Para ello utilizamos TukeysHSD sobre el modelo anova ya ajustado. Además, graficamos el modelo TukeyHSD para observar los intervalos de confianza.
 
 ```{r}
 # Realizar la prueba de Tukey para comparaciones múltiples
 TukeyHSD(modelo, conf.level = 0.95)
+```
 
+```{r}
 # Visualizar los intervalos de confianza del 95%
 plot(TukeyHSD(modelo, conf.level = 0.95))
 ```
 
-### 6. Calcular el tamaño del efecto
+Los valores p ajustados indican que con un nivel de confianza de 95%, Diazinon y Clorban muestran diferencias significativas entre sí.
 
-```{r}
-# Cargar el paquete lsr
-library(lsr)
-
-# Calcular el tamaño del efecto eta cuadrado
-etaSquared(modelo, anova = TRUE)
-```
-
-### 7. Calcular la potencia de la prueba
-
-```{r}
-# Calcular la potencia de la prueba
-power.anova.test(groups = 3, n = 12, between.var = 134.22, within.var = 34.72, sig.level = 0.05)
-```
-
-### 8. Determinar el tamaño de muestra necesario para una potencia de 0.8
-
-```{r}
-# Determinar el tamaño de muestra necesario para una potencia de 0.8
-power.anova.test(groups = 3, between.var = 134.22, within.var = 34.72, power = 0.8, sig.level = 0.05)
-```
-
-## Resultados
+## E.1. Reportando Resultados
 
 ### Exploración de los datos
 
 -   La media del conteo de insectos muertos es mayor para el insecticida Diazinon, seguido por Bioquim y Clorban.
 -   La desviación estándar es similar para los tres insecticidas.
--   El diagrama de cajas muestra que la distribución del conteo de insectos muertos es similar para los tres insecticidas.
+-   El diagrama de cajas muestra que la distribución del conteo de insectos muertos es similar para los tres insecticidas, aunque para bioquim el rango intercuartil es el menor, lo que sugiereme menos variabilidad. que los otros dos insecticidas.
 
 ### ANOVA
 
@@ -124,7 +138,7 @@ power.anova.test(groups = 3, between.var = 134.22, within.var = 34.72, power = 0
 ### Supuestos del modelo
 
 -   El gráfico de residuos vs. valores ajustados muestra que los residuos se distribuyen de manera uniforme alrededor de 0, lo que sugiere que se cumple el supuesto de homocedasticidad.
--   La prueba de Levene para la igualdad de varianzas no es significativa (p \> 0.05), lo que indica que se cumple el supuesto de homocedasticidad.
+-   Sin embargo, la prueba de Levene para la igualdad de varianzas no es significativa (p \> 0.05), lo que indica que se cumple el supuesto de homocedasticidad.
 -   El gráfico Q-Q muestra que los residuos siguen aproximadamente una línea recta, lo que sugiere que se cumple el supuesto de normalidad.
 -   La prueba de Shapiro-Wilk para la normalidad de los residuos no es significativa (p \> 0.05), lo que indica que se cumple el supuesto de normalidad.
 
@@ -134,9 +148,38 @@ power.anova.test(groups = 3, between.var = 134.22, within.var = 34.72, power = 0
 -   Diazinon tiene una media significativamente mayor que Clorban y Bioquim.
 -   No hay diferencia significativa entre Clorban y Bioquim.
 
+### F. Calcular el tamaño del efecto
+
+Calculamos el valor Eta Cuadrado utilizando la biblioteca lsr y la función etaSquared.
+
+```{r}
+# Cargar el paquete lsr 
+library(lsr)  
+
+# Calcular el tamaño del efecto eta cuadrado 
+
+etaSquared(modelo, anova = TRUE)
+```
+
+El efecto del insecticida es grande.
+
+### G. Calcular la potencia de la prueba con 0.05
+
+```{r}
+# Calcular la potencia de la prueba 
+power.anova.test(groups = 3, n = 12, between.var = 134.22, within.var = 34.72, sig.level = 0.05)
+```
+
+### H. Determinar el tamaño de muestra necesario para una potencia de 0.8
+
+```{r}
+# Determinar el tamaño de muestra necesario para una potencia de 0.8 
+power.anova.test(groups = 3, between.var = 134.22, within.var = 34.72, power = 0.8, sig.level = 0.05)
+```
+
 ### Tamaño del efecto
 
--   El tamaño del efecto eta cuadrado es 0.79, lo que indica que el 79% de la varianza en el conteo de insectos muertos se puede explicar por el tipo de insecticida.
+-   El tamaño del efecto eta cuadrado es 0.2, lo que indica un efecto grande.
 
 ### Potencia de la prueba
 
@@ -144,8 +187,8 @@ power.anova.test(groups = 3, between.var = 134.22, within.var = 34.72, power = 0
 
 ### Tamaño de muestra necesario para una potencia de 0.8
 
--   Se necesita un tamaño de muestra de 4 por grupo para lograr una potencia de 0.8.
+-   Se necesita un tamaño de muestra de 3 por grupo para lograr una potencia de 0.8.
 
 ## Conclusión
 
-Los resultados del ANOVA de una vía indican que existe una diferencia estadísticamente significativa entre las medias del conteo de insectos muertos para los tres insecticidas. Las pruebas post hoc muestran que Diazinon es el insecticida más efectivo, seguido por Bioquim y Clorban. El tamaño del efecto es grande, lo que indica que el tipo de insecticida tiene un impacto significativo en el conteo de insectos muertos. La potencia de la prueba es alta, lo que indica que hay una alta probabilidad de detectar una diferencia significativa si realmente existe una diferencia. Se necesita un tamaño de muestra de 4 por grupo para lograr una potencia de 0.8.
+Los resultados del ANOVA de una vía indican que existe una diferencia estadísticamente significativa entre las medias del conteo de insectos muertos para los tres insecticidas. Las pruebas post hoc muestran que Diazinon es el insecticida el más efectivo. El tamaño del efecto es grande, lo que indica que el tipo de insecticida tiene un impacto significativo en el conteo de insectos muertos. La potencia de la prueba es alta, lo que indica que hay una alta probabilidad de detectar una diferencia significativa si realmente existe una diferencia. Se necesita un tamaño de muestra de 3 por grupo para lograr una potencia de 0.8.
