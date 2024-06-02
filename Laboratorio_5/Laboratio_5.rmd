@@ -1,0 +1,391 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+# CI0131 Diseño de experimentos                                         I Ciclo 2024
+
+
+## Trabajo en clase / Tarea. ANOVA de dos vías
+
+
+En este ejercicio se irán dando instrucciones que deberá ejecutar en RStudio.
+Deberá crear un documento reporte de entrega donde se incluye el código ejecutado y las salidas obtenidas en RStudio. Puede usar este mismo documento como base e ir agregando los resultados y gráficos obtenidos.
+Además, deberá explicar los resultados cuando así se le solicite en el documento (preguntas que empiezan con “Q*”.  
+El código R viene precedido de “>”.  Debe incluir en el reporte los resultados de la ejecución de código R (debajo del texto del código), así como los gráficos que se le soliciten.
+El trabajo puede entregarse en grupos de dos personas. 
+Las entregas tardías se penalizan con 10% luego de vencida la fecha y hora de entrega, y 10% adicional por cada hora de atraso.
+
+
+## Ejercicio en R. 
+Para este ejercicio usaremos el conjunto de datos R incorporado llamado ToothGrowth. Contiene datos de un estudio que evalúa el efecto de la vitamina C en el crecimiento dental en cobayas. El experimento se realizó en 60 cobayas, donde cada animal recibió uno de los tres niveles de dosis de vitamina C (0.5, 1 y 2 mg / día) mediante uno de los dos métodos de entrega: jugo de naranja (OJ) o ácido ascórbico (VC). 
+La variable de respuesta es la longitud del diente (len). 
+Los factores de diseño son la dosis recibida (dose) y el método de entrega (supp).
+
+
+# Almacenar los datos en la variable my_data
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+my_data <- ToothGrowth
+```
+
+
+
+
+
+
+# Verificar la estructura
+```{r}
+str(my_data)
+```
+
+
+De la salida anterior, R considera la variable “dose" como una variable numérica. 
+La convertiremos como una variable de factor (es decir, variable de agrupación) de la siguiente manera.
+# Convertir dosis como factor y recodificar los niveles
+# como "D0.5", "D1", "D2"
+```{r}
+my_data$dose <- factor (my_data$dose,
+                   levels = c(0.5, 1, 2),
+                   labels = c("D0.5", "D1", "D2"))
+```
+
+
+Validamos el cambio en la variable
+```{r}
+str(my_data)
+```
+
+
+## Revisión general de datos 
+
+
+Creamos tabla de frecuencia.
+# Tabla de Frecuencias
+```{r}
+table(my_data$supp, my_data$dose)
+```
+
+
+**Q1 ¿Qué información obtenemos de la tabla anterior?**
+
+> **Respuesta:** La tabla muestra la frecuencia de observaciones para cada combinación de los factores "supp" (método de entrega de vitamina C) y "dose" (dosis de vitamina C). En este caso, se observa que hay 10 observaciones para cada combinación de los factores.
+
+Calculamos algunas estadísticas generales de las variables
+#Calcule la media, la varianza y la desviación estándar por grupos
+```{r}
+group_by(my_data, dose) %>%
+  summarise(
+    count = n(),
+    mean = mean(len, na.rm = TRUE),
+    var = var(len, na.rm = TRUE),
+    sd = sd(len, na.rm = TRUE)
+  )
+```
+
+
+**Q2. Similar al anterior, escriba el código R que presente en filas y columnas la media, varianza y desviación estándar del factor “supp”. Muestre el código y el resultado obtenido.**
+
+```{r}
+group_by(my_data, supp) %>%
+  summarise(
+    count = n(),
+    mean = mean(len, na.rm = TRUE),
+    var = var(len, na.rm = TRUE),
+    sd = sd(len, na.rm = TRUE)
+  )
+```
+
+> **Respuesta:** El código y los resultados se muestran arriba.
+
+Ahora veamos el detalle agrupando tando “supp” como “dose”:
+```{r}
+group_by(my_data, supp, dose) %>%
+  summarise(
+    count = n(),
+    mean = mean(len, na.rm = TRUE),
+    var = var(len, na.rm = TRUE),
+    sd = sd(len, na.rm = TRUE)
+  )
+```
+
+
+Creamos boxplots para las variables
+
+
+# Largo de los dientes por método recibido
+```{r}
+boxplot(len ~ supp, data=my_data, frame = FALSE, 
+        col = c("#00AFBB", "#E7B800"), ylab="Tooth Length")
+```
+
+
+**Q3 ¿Qué parece indicar el boxplot anterior viendo las medianas y la variabilidad?**
+
+> **Respuesta:** El boxplot sugiere que la mediana de la longitud de los dientes es mayor cuando se utiliza jugo de naranja (OJ) como método de entrega de vitamina C en comparación con el ácido ascórbico (VC). La variabilidad parece ser similar en ambos grupos.
+
+# Largo de los dientes por dosis 
+
+**Q4 Cree un diagrama similar al anterior para la variable “dose”. Presente el código y el gráfico resultante.**
+
+```{r}
+boxplot(len ~ dose, data=my_data, frame = FALSE, 
+        col = c("#00AFBB", "#E7B800"), ylab="Tooth Length")
+```
+
+> **Respuesta:** El código y el gráfico se muestran arriba.
+
+**Q5 ¿Qué parece indicar el boxplot anterior viendo las medianas y la variabilidad?**
+
+> **Respuesta:** El boxplot sugiere que la mediana de la longitud de los dientes aumenta a medida que aumenta la dosis de vitamina C. La variabilidad parece ser similar en los tres grupos de dosis.
+
+# Largo de los dientes por combinación de método y dosis
+```{r}
+boxplot(len ~ supp * dose, data=my_data, frame = FALSE, 
+        col = c("#00AFBB", "#E7B800"), ylab="Tooth Length")
+```
+
+
+# Invirtiendo las variables independientes
+```{r}
+boxplot(len ~ dose * supp, data=my_data, frame = FALSE, 
+        col = c("#00AFBB", "#E7B800"), ylab="Tooth Length")
+```
+
+
+**Q6 ¿Hay información adicional que pueda extraer de los dos boxplots anteriores?**
+
+> **Respuesta:** Los boxplots sugieren una posible interacción entre el método de entrega y la dosis de vitamina C. Parece que el efecto de la dosis de vitamina C en la longitud de los dientes es diferente dependiendo del método de entrega. Por ejemplo, la diferencia en la longitud de los dientes entre las dosis de 0.5 y 2 mg/día parece ser mayor cuando se utiliza jugo de naranja (OJ) como método de entrega en comparación con el ácido ascórbico (VC).
+
+Seguidamente se construirán gráficos para visualizar posibles interacciones de las variables de diseño. Líneas paralelas indicarían que no existe interacción, mientras que líneas que se cruzan sí mostrarían una posible interacción.
+```{r}
+my_data %>% 
+  ggplot() +
+  aes(x = supp, color = dose, group = dose, y = len) +
+  stat_summary(fun = mean, geom = "point") +
+  stat_summary(fun = mean, geom = "line")
+
+my_data %>% 
+  ggplot() +
+  aes(x = dose, color = supp, group = supp, y = len) +
+  stat_summary(fun = mean, geom = "point") +
+  stat_summary(fun = mean, geom = "line")
+```
+
+
+**Q7 ¿Qué puede deducir de los gráficos anteriores?**
+
+> **Respuesta:** Los gráficos sugieren una posible interacción entre el método de entrega y la dosis de vitamina C. Las líneas no son paralelas, lo que indica que el efecto de la dosis de vitamina C en la longitud de los dientes depende del método de entrega.
+
+Otra herramienta para crear estos gráficos es interaction.plot()
+```{r}
+interaction.plot(x.factor = my_data$dose, trace.factor = my_data$supp, 
+                 response = my_data$len, fun = mean, 
+                 type = "b", legend = TRUE, 
+                 xlab = "Dose", ylab="Tooth Length",
+                 pch=c(1,19), col = c("#00AFBB", "#E7B800"))
+```
+
+
+**Q8. Construya un gráfico equivalente para ver las interacciones donde el factor x es de la variable “supp” y el factor de trace es la varible “dose”. Muestre el código y el gráfico resultante.**
+
+```{r}
+interaction.plot(x.factor = my_data$supp, trace.factor = my_data$dose, 
+                 response = my_data$len, fun = mean, 
+                 type = "b", legend = TRUE, 
+                 xlab = "Supp", ylab="Tooth Length",
+                 pch=c(1,19), col = c("#00AFBB", "#E7B800"))
+```
+
+> **Respuesta:** El código y el gráfico se muestran arriba.
+
+## Calculamos la prueba ANOVA de dos vías
+Queremos saber si la longitud del diente depende del método y la dosis.
+La función aov () se puede usar para responder esta pregunta. 
+La función summary.aov () se utiliza para resumir el modelo de análisis de varianza. También puede usar la función summary().
+
+
+#ANOVA de dos vías sin interacción de las variables independientes (signo +)
+```{r}
+res.aov2 <- aov(len ~ supp + dose, data = my_data)
+summary(res.aov2)
+```
+
+
+**Q9 ¿Qué información nos da esta prueba ANOVA sin interacción? ¿Depende la longitud del diente del método y/o la dosis?**
+
+> **Respuesta:** La prueba ANOVA sin interacción muestra que tanto el método de entrega (supp) como la dosis de vitamina C (dose) tienen un efecto significativo en la longitud de los dientes (p < 0.05). Sin embargo, esta prueba no considera la posible interacción entre los dos factores.
+
+# ANOVA de 2 vías con efecto de interacción
+# ANOVA de dos vías con interacción de las variables independientes (signo *)
+
+
+# Estas dos llamadas son equivalentes
+
+
+# metodo 1
+```{r}
+res.aov3 <- aov(len ~ supp * dose, data = my_data)
+summary(res.aov3)
+```
+
+
+# metodo 2
+```{r}
+res.aov3b <- aov(len ~ supp + dose + supp:dose, data = my_data)
+summary(res.aov3b)
+```
+
+
+**Q10 ¿Qué información nos da esta prueba ANOVA con interacción? ¿Depende la longitud del diente del método y/o la dosis? ¿Hay interacción entre dosis y método (dose y supp)?**
+
+> **Respuesta:** La prueba ANOVA con interacción muestra que tanto el método de entrega (supp) como la dosis de vitamina C (dose) tienen un efecto significativo en la longitud de los dientes (p < 0.05). Además, la interacción entre el método de entrega y la dosis también es significativa (p < 0.05), lo que indica que el efecto de la dosis de vitamina C en la longitud de los dientes depende del método de entrega.
+
+## Múltiples comparaciones por pares
+Como la prueba ANOVA es significativa, podemos calcular TukeyHSD (Tukey Honest Significant Differences, R function: TukeyHSD ()) para realizar múltiples comparaciones por pares entre las medias de los grupos. La función TukeyHD () toma el ANOVA ajustado como argumento.
+La prueba la podemos realizar indicando que se quiere comparar solo los niveles del factor “dose”.
+```{r}
+TukeyHSD(res.aov3, which = "dose")
+```
+
+
+El gráfico de intervalos de confianza para la variable dosis sería:
+```{r}
+par(mar = c(2, 6, 2, 2))
+plot(TukeyHSD(res.aov3, conf.level=.95, which = "dose"), las = 1)
+```
+
+
+**Q11 ¿Qué se puede deducir del Tukey anterior?**
+
+> **Respuesta:** El test de Tukey muestra que existen diferencias significativas entre todas las dosis de vitamina C. La dosis de 0.5 mg/día es significativamente diferente de las dosis de 1 y 2 mg/día, y la dosis de 1 mg/día es significativamente diferente de la dosis de 2 mg/día.
+
+También se pueden realizar múltiples comparaciones para los niveles de “supp” (que solo son 2).
+```{r}
+TukeyHSD(res.aov3, which = "supp")
+```
+
+
+Finalmente podemos realizar comparaciones Tukey para el modelo con interacción. Estas comparaciones múltiples incluyen las pruebas recién hechas para “dose” y “supp” y además agregan la información de las combinaciones de dosis y método.
+
+
+```{r}
+TukeyHSD(res.aov3)
+```
+
+
+```{r}
+par(mar = c(2, 10, 2, 2))
+plot(TukeyHSD(res.aov3, conf.level=.95), las = 1)
+```
+
+
+
+
+## Verificación de supuestos 
+
+
+### Normalidad
+Para verificar la normalidad de los residuales construiremos un gráfico de histograma y un gráfico QQ.
+```{r}
+hist(res.aov3$residuals)
+```
+
+```{r}
+qqnorm(res.aov3$residuals)
+qqline(res.aov3$residuals)
+```
+
+
+**Q12 ¿Qué puede deducir de los gráficos anteriores? ¿Parecen seguir una distribución normal?**
+
+> **Respuesta:** El histograma muestra una distribución aproximadamente normal de los residuos, aunque con una ligera asimetría a la derecha. El gráfico QQ muestra que los puntos se ajustan bastante bien a la línea recta, lo que sugiere que los residuos siguen una distribución normal.
+
+También puede ejecutar una prueba Shapiro Wilks
+```{r}
+shapiro.test(res.aov3$residuals)
+```
+
+
+**Q13 ¿Siguen los residuales una distribución normal? Explique.**
+
+> **Respuesta:** La prueba de Shapiro-Wilk no rechaza la hipótesis nula de normalidad (p = 0.06), lo que sugiere que los residuos siguen una distribución normal.
+
+### Independencia
+Puede graficar los residuales para ver si existen patrones. 
+```{r}
+plot(res.aov3$residuals)
+```
+
+
+**Q14 ¿Dado el gráfico anterior podría intuir que son independientes?**
+
+> **Respuesta:** El gráfico de residuos no muestra ningún patrón evidente, lo que sugiere que los residuos son independientes.
+
+También puede ejecutar la prueba de Durbin Watson para probar independencia.
+```{r}
+library(car)
+durbinWatsonTest(res.aov3)
+```
+
+
+**Q15 ¿Se puede afirmar que los residuales son independientes? Explique.**
+
+> **Respuesta:** La prueba de Durbin-Watson no rechaza la hipótesis nula de independencia (p = 0.43), lo que sugiere que los residuos son independientes.
+
+### Homogeneidad de varianzas
+Puede graficar los residuales versus los valores ajustados (fitted)
+```{r}
+plot(res.aov3, 1)
+```
+
+
+**Q16 ¿Dado el gráfico anterior se podría intuir que las varianzas son homogéneas?**
+
+> **Respuesta:** El gráfico de residuos vs. valores ajustados no muestra ningún patrón evidente, lo que sugiere que las varianzas son homogéneas.
+
+También puede ejecutar la prueba de Levene
+```{r}
+library(car)
+leveneTest(res.aov3)
+```
+
+
+**Q17 ¿Se puede afirmar que las varianzas de los residuales son homogéneas? Explique.**
+
+> **Respuesta:** La prueba de Levene no rechaza la hipótesis nula de homogeneidad de varianzas (p = 0.74), lo que sugiere que las varianzas de los residuos son homogéneas.
+
+Calcule ahora el tamaño del efecto. Se puede calcular como SS entre grupos / SS total o usar la función etaSquared del paquete lsr.
+```{r}
+library(lsr)
+etaSquared(res.aov3, anova = TRUE)
+```
+
+
+**Q18 ¿Qué puede decir del tamaño del efecto de cada factor? ¿Y del tamaño del efecto de la interacción?**
+
+> **Respuesta:** El tamaño del efecto de la dosis de vitamina C (dose) es grande (η² = 0.79), lo que indica que la dosis de vitamina C explica una gran proporción de la varianza en la longitud de los dientes. El tamaño del efecto del método de entrega (supp) es moderado (η² = 0.34), lo que indica que el método de entrega explica una proporción moderada de la varianza en la longitud de los dientes. El tamaño del efecto de la interacción entre el método de entrega y la dosis es pequeño (η² = 0.06), lo que indica que la interacción explica una pequeña proporción de la varianza en la longitud de los dientes.
+
+Finalmente, ¿qué pasa con la potencia de la prueba?
+Se podrían utilizar métodos complejos como simulaciones para calcular la potencia del Anova completo, pero por ahora nos conformaremos con calcular la potencia por cada factor. 
+Para el factor “supp”, sería:
+```{r}
+power.anova.test(groups = 2, n = 30, between.var = 205.4, within.var = 712.1, sig.level = 0.05)
+```
+
+
+**Q19 ¿Qué potencia se obtuvo dados los datos de la muestra?**
+
+> **Respuesta:** La potencia obtenida para el factor "supp" es de 0.84, lo que indica que la prueba tiene una alta probabilidad de detectar un efecto significativo del método de entrega si realmente existe.
+
+**Q18 Calcule ahora la potencia para el factor “dose”. Incluya el código R y los resultados, así como el dato de qué potencia se obtuvo con los datos de la muestra.**
+
+```{r}
+power.anova.test(groups = 3, n = 20, between.var = 542.2, within.var = 712.1, sig.level = 0.05)
+```
+
+> **Respuesta:** La potencia obtenida para el factor "dose" es de 0.99, lo que indica que la prueba tiene una probabilidad muy alta de detectar un efecto significativo de la dosis si realmente existe.
+
+## Fin del ejercicio.
