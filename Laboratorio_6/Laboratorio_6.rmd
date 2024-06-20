@@ -1,29 +1,29 @@
- 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## CI0131 Diseño de experimentos - I Ciclo 2024
 
-## Laboratorio de regresión lineal simple
+## Laboratorio 6: Regresión Lineal Simple
 
 ### Integrantes:
 
-*   Brandon Mora Umaña
-*   A. Badilla Olivas
+-   Brandon Mora Umaña - C15179
+-   A. Badilla Olivas - B80874
 
 ## Primera parte
 
 ### Pregunta 1
 
-Para mostrar la relación entre la variable `runs` y otra variable numérica, se utilizaría un **diagrama de dispersión**. 
+Para mostrar la relación entre la variable `runs` y otra variable numérica, se utilizaría un **diagrama de dispersión**.
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 download.file("http://www.openintro.org/stat/data/mlb11.RData", destfile = "mlb11.RData")
 load("mlb11.RData")
+mlb11
 ```
 
-```{r echo=FALSE, fig.cap="Relación entre Carreras Anotadas (runs) y Turnos al Bate (at_bats)"}
+```{r fig.cap="Relación entre Carreras Anotadas (runs) y Turnos al Bate (at_bats)"}
 plot(mlb11$at_bats, mlb11$runs, xlab = "Turnos al Bate (at_bats)", ylab = "Carreras Anotadas (runs)")
 ```
 
@@ -31,37 +31,76 @@ La relación entre `runs` y `at_bats` parece ser **lineal y positiva**, aunque c
 
 El coeficiente de correlación entre `runs` y `at_bats` es:
 
-```{r echo=FALSE}
+```{r}
 cor(mlb11$runs, mlb11$at_bats)
 ```
 
 Esto confirma una **correlación positiva moderadamente fuerte** entre las variables.
 
 ### Pregunta 2
-
-```{r echo=FALSE, fig.cap="Relación entre Carreras Anotadas (runs) y Turnos al Bate (at_bats) con Residuos Cuadrados", fig.height=4, fig.width=6}
-plot_ss <- function(x, y, showSquares = FALSE) {
+Escribimos las siguientes funciones para gráficar además de la linea los residuales de manera más bonita.
+```{r fig.cap="Relación entre Carreras Anotadas (runs) y Turnos al Bate (at_bats) con Residuos Cuadrados", fig.height=4, fig.width=6}
+# Function to plot data points and optionally show squares of residuals
+plot_ss <- function(x, y, showSquares = FALSE, predefined=FALSE) {
+  # Plot the initial scatter plot
   plot(x, y, xlab = "", ylab = "")
-  cat("Click dos veces en el gráfico para hacer una línea.\n")
-  pts <- locator(n = 2)
-  slope <- (pts$y[2] - pts$y[1]) / (pts$x[2] - pts$x[1])
-  int <- pts$y[1] - slope * pts$x[1]
-  abline(int, slope)
+  cat("Click twice on the graph to draw a line.\n")
+  # Get two points from the user to define the line or use predefined points
+  if (predefined)
+    user_points <- data.frame(x=c(min(x), max(x)), y=c(min(y), max(y)))
+  else 
+    user_points <- getUserDefinedLine() 
+  # Calculate slope and intercept based on user points
+  line_params <- calculateLineParams(user_points)
+  
+  # Draw the line on the plot
+  drawLine(line_params$intercept, line_params$slope)
+  
+  # Optionally, show squares of residuals
   if(showSquares) {
-    segments(x, y, x, int + slope * x, col = "blue", lty = 2)
-    points(x, y, pch = 16, cex = 1.2)
-    points(x, int + slope * x, col = "red", pch = 16, cex = 1.2)
+    showResidualSquares(x, y, line_params$slope, line_params$intercept)
   }
-  # Calcula la suma de cuadrados de los residuos
-  y_pred <- int + slope * x
-  ss_res <- sum((y - y_pred)^2)
-  cat("Suma de cuadrados de los residuos:", ss_res, "\n")
-  cat("Intersección:", int, "Pendiente:", slope, "\n")
+  
+  # Calculate and display the sum of squares of residuals
+  ss_res <- calculateSSRes(x, y, line_params$slope, line_params$intercept)
+  cat("Sum of squares of residuals:", ss_res, "\n")
+  cat("Intercept:", line_params$intercept, "Slope:", line_params$slope, "\n")
 }
-plot_ss(x = mlb11$at_bats, y = mlb11$runs, showSquares = TRUE)
+# Function to get two points from the user to define the line
+getUserDefinedLine <- function() {
+  pts <- locator(n = 2)
+  return(pts)
+}
+# Function to calculate slope and intercept from two points
+calculateLineParams <- function(pts) {
+  slope <- (pts$y[2] - pts$y[1]) / (pts$x[2] - pts$x[1])
+  intercept <- pts$y[1] - slope * pts$x[1]
+  return(list(slope = slope, intercept = intercept))
+}
+# Function to draw a line given slope and intercept
+drawLine <- function(intercept, slope) {
+  abline(a = intercept, b = slope)
+}
+# Function to show squares of residuals
+showResidualSquares <- function(x, y, slope, intercept) {
+  # Here we plot the actual data
+  points(x = x, y = y, pch = 16, cex = 1.2)
+  # here we plot the points sample frome the line we created
+  points(x = x, y = intercept + slope * x, col = "red", pch = 16, cex = 1.2)
+  # here we plot line segments from the line  and the actual data.
+  segments(x0 = x, y0 = y, x1 = x, y1 = intercept + slope * x, col = "blue", lty = 2)
+}
+# Function to calculate the sum of squares of residuals
+calculateSSRes <- function(x, y, slope, intercept) {
+  y_pred <- intercept + slope * x
+  ss_res <- sum((y - y_pred)^2)
+  return(ss_res)
+}
+
+plot_ss(x = mlb11$at_bats, y = mlb11$runs, showSquares = TRUE, predefined=TRUE)
 ```
 
-La menor suma de cuadrados que se logró obtener fue **[insertar valor obtenido]**.  Como se mencionó, es difícil igualar la suma de cuadrados del modelo lineal (123721.9) de forma manual.
+La menor suma de cuadrados que se logró obtener fue **144425.8**. Como se mencionó, es difícil igualar la suma de cuadrados del modelo lineal (123721.9) de forma manual.
 
 ### Pregunta 3
 
@@ -87,20 +126,20 @@ La ecuación del modelo lineal para `runs` en función de `homeruns` es:
 
 ŷ = 415.2389 + 1.8345 \* homeruns
 
-*   **Pendiente:** La pendiente de 1.8345 indica que, por cada jonrón adicional que un equipo realiza, se espera que anote 1.83 carreras más, manteniendo constantes las demás variables.
+-   **Pendiente:** La pendiente de 1.8345 indica que, por cada homerun adicional que un equipo realiza, se espera que anote 1.83 carreras más, manteniendo constantes las demás variables.
 
-*   **R-cuadrado:** El R-cuadrado de este modelo (0.6269) es mayor que el del modelo con `at_bats` (0.3729). Esto significa que el 62.69% de la variabilidad en las carreras anotadas se explica por la cantidad de jonrones, lo que indica un mejor ajuste que el modelo anterior.
+-   **R-cuadrado:** El R-cuadrado de este modelo (0.6266) es mayor que el del modelo con `at_bats` (0.3729). Esto significa que el 62.69% de la variabilidad en las carreras anotadas se explica por la cantidad de homeruns, lo que indica un mejor ajuste que el modelo anterior.
 
 ### Pregunta 6
 
-```{r echo=FALSE, fig.cap="Diagrama de Dispersión con Línea de Mínimos Cuadrados", fig.height=4, fig.width=6}
+```{r fig.cap="Diagrama de Dispersión con Línea de Mínimos Cuadrados", fig.height=4, fig.width=6}
 plot(mlb11$runs ~ mlb11$at_bats, xlab = "Turnos al Bate (at_bats)", ylab = "Carreras Anotadas (runs)")
 abline(m1)
 ```
 
 ### Pregunta 7
 
-```{r echo=FALSE, fig.cap="Gráfico de Residuos vs. Turnos al Bate", fig.height=4, fig.width=6}
+```{r fig.cap="Gráfico de Residuos vs. Turnos al Bate", fig.height=4, fig.width=6}
 plot(m1$residuals ~ mlb11$at_bats, xlab = "Turnos al Bate (at_bats)", ylab = "Residuos")
 abline(h = 0, lty = 3)
 ```
@@ -109,25 +148,25 @@ abline(h = 0, lty = 3)
 
 ### Pregunta 8
 
-```{r echo=FALSE, fig.cap="Histograma de Residuos", fig.height=4, fig.width=6}
+```{r fig.cap="Histograma de Residuos", fig.height=4, fig.width=6}
 hist(m1$residuals)
 ```
 
-```{r echo=FALSE, fig.cap="Gráfica de Probabilidad Normal de Residuos", fig.height=4, fig.width=6}
+```{r fig.cap="Gráfica de Probabilidad Normal de Residuos", fig.height=4, fig.width=6}
 qqnorm(m1$residuals)
 qqline(m1$residuals)
 ```
 
-Tanto el histograma como la gráfica de probabilidad normal sugieren que **la condición de residuos normales se cumple razonablemente**. El histograma muestra una forma aproximadamente simétrica y acampanada, y la mayoría de los puntos en la gráfica de probabilidad normal se encuentran cerca de la línea diagonal.
+Tanto el histograma como la gráfica de probabilidad normal sugieren que **la condición de residuos normales se cumple razonablemente**. El histograma muestra una forma aproximadamente simétrica y acampanada, aunque una de las barras en el centro parace desviarse. También, la mayoría de los puntos en la gráfica de probabilidad normal se encuentran cerca de la línea diagonal.
 
 ### Pregunta 9
 
-```{r echo=FALSE, fig.cap="Gráfico de Residuos vs. Valores Ajustados", fig.height=4, fig.width=6}
+```{r fig.cap="Gráfico de Residuos vs. Valores Ajustados", fig.height=4, fig.width=6}
 plot(m1$residuals ~ m1$fitted.values, xlab = "Valores Ajustados", ylab = "Residuos")
 abline(h = 0, lty = 3)
 ```
 
-El gráfico de residuos vs. valores ajustados **no muestra un patrón evidente**, lo que sugiere que **la condición de varianza homogénea de los residuos se cumple**. 
+El gráfico de residuos vs. valores ajustados **no muestra un patrón evidente**, lo que sugiere que **la condición de varianza homogénea de los residuos se cumple**.
 
 ## Segunda parte
 
@@ -167,7 +206,7 @@ for (variable in c("at_bats", "hits", "homeruns", "bat_avg", "strikeouts", "stol
 tabla_resultados
 ```
 
-De acuerdo con los resultados de la tabla, la variable **`bat_avg` (promedio de bateo) parece ser el mejor predictor de `runs`** entre las variables tradicionales. Esto se debe a que presenta el **mayor valor de R-cuadrado (0.6561)**, lo que indica que explica la mayor proporción de la variabilidad en las carreras anotadas. Además, tiene un **valor p muy pequeño**, lo que indica una relación estadísticamente significativa.
+De acuerdo con los resultados de la tabla, la variable **`bat_avg` (promedio de bateo) parece ser el mejor predictor de `runs`** entre las variables tradicionales. Esto se debe a que presenta el **mayor valor de R-cuadrado (0.6561)**, lo que indica que explica la mayor proporción de la variabilidad en las carreras anotadas. Además, tiene un **valor p muy pequeño**, lo que indica una relación estadísticamente significativa. Por último, también es la que posee la mayor correlación con la varaiable `runs`.
 
 ### Pregunta 11
 
@@ -207,6 +246,6 @@ tabla_resultados_nuevas
 
 En general, las **nuevas variables (`new_onbase`, `new_slug`, `new_obs`) son más efectivas para predecir `runs`** que las variables tradicionales. Esto se evidencia en los **valores de R-cuadrado más altos** para las tres nuevas variables en comparación con las variables tradicionales.
 
-El **mejor predictor de `runs` parece ser `new_obs` (suma de porcentaje de embasamiento y porcentaje de slugging)**. Esta variable presenta el **R-cuadrado más alto (0.9349)**, lo que significa que explica una gran proporción de la variabilidad en las carreras anotadas. 
+El **mejor predictor de `runs` parece ser `new_obs` (suma de porcentaje de embasamiento y porcentaje de slugging)**. Esta variable presenta el **R-cuadrado más alto (0.9349)**, lo que significa que explica una gran proporción de la variabilidad en las carreras anotadas. New obs esta definida como la suma de porcentaje de embasamiento y porcentaje de slugging, ambos con porcentajes de correlación muy altos indicando que sean variables muy significativas para el modelo.
 
 Estos resultados apoyan la premisa de Moneyball, que sugiere que estadísticas como el porcentaje de embasamiento y el porcentaje de slugging son mejores predictores del éxito de un equipo que las estadísticas tradicionales.
