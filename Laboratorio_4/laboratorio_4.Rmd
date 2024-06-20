@@ -1,7 +1,7 @@
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
+```
 # CI0131 Diseño de experimentos - Laboratorio - I Ciclo 2024
 
 ## Laboratorio: ANOVA de una vía
