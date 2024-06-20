@@ -1,0 +1,67 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## CI0131 Diseño de experimentos - I Ciclo 2024
+
+## Laboratorio 7: Diseño Factorial
+
+### Integrantes:
+
+-   Brandon Mora Umaña - C15179
+-   A. Badilla Olivas - B80874
+
+# Problema 1
+
+## Parte 1
+
+El modelo de datos se puede ver de la siguiente manera:
+
+$$
+ y_{ijkl} = \alpha_i + \beta_j + (\alpha\beta)_{ij} + \tau_k + \epsilon_{ijkl}
+$$
+
+donde $\alpha$ es filtro $\beta$ es ground, $\tau$ se refiere al bloque del operador.
+
+$$
+ \begin{cases} 
+      i \in \{1,2\} \\
+      j \in \{low, medium, high\} \\
+      k \in \{1, 2, 3, 4\} \\
+      l \in \{1,2,3,...,25\}
+   \end{cases}
+$$
+
+## Parte 2
+
+```{r warning=FALSE}
+library(readr)
+intensity_1 <- read_csv("intensity.csv", show_col_types = FALSE)
+
+intensity_1$Ground <- as_factor(intensity_1$Ground)
+intensity_1$Operator <- as_factor(intensity_1$Operator)
+intensity_1$Filter <- as_factor(intensity_1$Filter)
+
+intensity_1
+summary(intensity_1)
+```
+
+```{r}
+intensity_anova_without_block <- aov(Intensity ~ Ground + Filter + Ground:Filter, data = intensity_1)
+
+summary(intensity_anova_without_block)
+```
+
+Podemos deducir que el factor terreno y el factor filtro tienen un efecto significativo, la interación entre ellos no es significativa. (TODO: explicar mas)
+
+## Parte 3
+
+```{r}
+intensity_anova_with_block <- aov(Intensity ~ Ground + Filter + Ground:Filter + Operator, data = intensity_1)
+
+summary(intensity_anova_with_block)
+```
+
+Podemos deducir que el factor terreno y el factor filtro tienen un efecto significativo, la interación entre ellos no es significativa, el bloque si es significativo (TODO: explicar mas)
+
+# Problema 2
