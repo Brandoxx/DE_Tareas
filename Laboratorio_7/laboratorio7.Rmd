@@ -1,5 +1,6 @@
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(width = 60)
 ```
 
 ## CI0131 Diseño de experimentos - I Ciclo 2024
@@ -47,7 +48,8 @@ summary(intensity_1)
 ```
 
 ```{r}
-intensity_anova_without_block <- aov(Intensity ~ Ground + Filter + Ground:Filter, data = intensity_1)
+intensity_anova_without_block <- aov(Intensity ~ Ground + Filter + Ground:Filter,
+                                     data = intensity_1)
 
 summary(intensity_anova_without_block)
 ```
@@ -57,7 +59,8 @@ Podemos deducir que el factor terreno y el factor filtro tienen un efecto signif
 ## Parte 3
 
 ```{r}
-intensity_anova_with_block <- aov(Intensity ~ Ground + Filter + Ground:Filter + Operator, data = intensity_1)
+intensity_anova_with_block <- aov(Intensity ~ Ground + Filter + Ground:Filter + Operator,
+                                  data = intensity_1)
 
 summary(intensity_anova_with_block)
 ```
