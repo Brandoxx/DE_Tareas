@@ -18,10 +18,10 @@ knitr::opts_chunk$set(echo = TRUE)
 El modelo de datos se puede ver de la siguiente manera:
 
 $$
- y_{ijkl} = \alpha_i + \beta_j + (\alpha\beta)_{ij} + \tau_k + \epsilon_{ijkl}
+ y_{ijkl} = \mu + \alpha_i + \beta_j + (\alpha\beta)_{ij} + \tau_k + \epsilon_{ijkl}
 $$
 
-donde $\alpha$ es filtro $\beta$ es ground, $\tau$ se refiere al bloque del operador.
+donde $\alpha$ es filtro $\beta$ es ground, $\tau$ se refiere al bloque del operador y $\mu$ es un efecto general.
 
 $$
  \begin{cases} 
@@ -36,11 +36,11 @@ $$
 
 ```{r warning=FALSE}
 library(readr)
-intensity_1 <- read_csv("intensity.csv", show_col_types = FALSE)
+intensity_1 <- read_csv("intensity.csv")
 
-intensity_1$Ground <- as_factor(intensity_1$Ground)
-intensity_1$Operator <- as_factor(intensity_1$Operator)
-intensity_1$Filter <- as_factor(intensity_1$Filter)
+intensity_1$Ground <- as.factor(intensity_1$Ground)
+intensity_1$Operator <- as.factor(intensity_1$Operator)
+intensity_1$Filter <- as.factor(intensity_1$Filter)
 
 intensity_1
 summary(intensity_1)
@@ -52,7 +52,7 @@ intensity_anova_without_block <- aov(Intensity ~ Ground + Filter + Ground:Filter
 summary(intensity_anova_without_block)
 ```
 
-Podemos deducir que el factor terreno y el factor filtro tienen un efecto significativo, la interación entre ellos no es significativa. (TODO: explicar mas)
+Podemos deducir que el factor terreno y el factor filtro tienen un efecto significativo, la interacción entre ellos no es significativa. Esto se debe a que los valores p de Ground y Filter son menores a 0.05, lo que indica que hay evidencia suficiente para rechazar la hipótesis nula de que no hay diferencia entre las medias de los grupos. En cambio, el valor p de la interacción es mayor a 0.05, lo que indica que no hay evidencia suficiente para rechazar la hipótesis nula de que no hay interacción entre los factores.
 
 ## Parte 3
 
@@ -62,6 +62,83 @@ intensity_anova_with_block <- aov(Intensity ~ Ground + Filter + Ground:Filter + 
 summary(intensity_anova_with_block)
 ```
 
-Podemos deducir que el factor terreno y el factor filtro tienen un efecto significativo, la interación entre ellos no es significativa, el bloque si es significativo (TODO: explicar mas)
+Podemos deducir que el factor terreno, el factor filtro y el bloque tienen un efecto significativo, la interacción entre terreno y filtro no es significativa. Nuevamente, esto se debe a que los valores p de Ground, Filter y Operator son menores a 0.05, mientras que el valor p de la interacción es mayor a 0.05. La inclusión del bloque como factor en el modelo permite controlar la variabilidad debida a las diferencias entre los operadores, lo que puede mejorar la precisión del análisis.
 
 # Problema 2
+
+## Parte 4
+|-------| Día 1 | Día 2 | Día 3 | Día 4 | Día 5 | Día 6 |
+|-------|-------|-------|-------|-------|-------|-------|
+| Op. 1 | A     | B     | C     | D     | E     | F     |
+| Op. 2 | B     | C     | D     | E     | F     | A     |
+| Op. 3 | C     | D     | E     | F     | A     | B     |
+| Op. 4 | D     | E     | F     | A     | B     | C     |
+| Op. 5 | E     | F     | A     | B     | C     | D     |
+| Op. 6 | F     | A     | B     | C     | D     | E     |
+
+
+Donde las letras se refieren a los siguientes tratamientos:
+
+| ID | tratamiento | Ground | Filter |
+|----|-------------|--------|--------|
+| 1  | A           | Low    | 1      |
+| 2  | B           | Low    | 2      |
+| 3  | C           | Medium | 1      |
+| 4  | D           | Medium | 2      |
+| 5  | E           | High   | 1      |
+| 6  | F           | High   | 2      |
+
+## Parte 5
+
+El modelo de datos se puede ver de la siguiente manera:
+
+$$
+ y_{ijkl} = \mu + \alpha_i + \beta_j + (\alpha\beta)_{ij} + \tau_k + \gamma_l + \epsilon_{ijkl}
+$$
+
+donde $\alpha$ es filtro $\beta$ es ground, $\tau$ se refiere al bloque del operador, $\gamma$ se refiere al día  y $\mu$ es un efecto general.
+
+$$
+ \begin{cases} 
+      i \in \{1,2\} \\
+      j \in \{low, medium, high\} \\
+      k \in \{1, 2, 3, 4, 5, 6\} \\
+      l \in \{1,2,3, 4, 5, 6\}
+   \end{cases}
+$$
+
+## Parte 6
+
+```{r warning=FALSE}
+intensity_2 <- read_csv("intensity2.csv")
+
+intensity_2$Ground <- as.factor(intensity_2$Ground)
+intensity_2$Operator <- as.factor(intensity_2$Operator)
+intensity_2$Filter <- as.factor(intensity_2$Filter)
+intensity_2$Day <- as.factor(intensity_2$Day)
+
+intensity_2
+summary(intensity_2)
+```
+
+```{r}
+intensidad_anova_sin_bloque <- aov(Intensity ~ Ground + Filter + Ground:Filter, data = intensity_2)
+
+summary(intensidad_anova_sin_bloque)
+```
+
+Podemos deducir que el factor terreno y el factor filtro tienen un efecto significativo, la interacción entre ellos no es significativa. Nuevamente, esto se debe a que los valores p de Ground y Filter son menores a 0.05, mientras que el valor p de la interacción es mayor a 0.05.
+
+## Parte 7
+
+```{r}
+intensidad_anova_con_bloque <- aov(Intensity ~ Ground + Filter + Ground:Filter + Operator + Day, data = intensity_2)
+
+summary(intensidad_anova_con_bloque)
+```
+
+Podemos deducir que el factor terreno, el factor filtro, el operador y la interacción entre terreno y filtro tienen un efecto significativo. Por otra parte, el día no es significativo. Nuevamente, esto se debe a que los valores p de Ground, Filter, Operator y la interacción entre Ground y Filter son menores a 0.05. La inclusión del operador y el día como factores en el modelo permite controlar la variabilidad debida a las diferencias entre los operadores y los días, lo que mejora el modelo. Por ejemplo, el uso de bloque reduce el valor de suma de cuadrados asignado a los residuales lo que es positivo porque reduce los efectos no considerados en el experimento.
+
+## Parte 8
+
+En conclusión, la inclusión de bloques en los diseños factoriales puede ser beneficiosa para controlar la variabilidad debida a factores no controlables o de poco interés, como las diferencias entre operadores o días. Al controlar esta variabilidad, se puede mejorar la precisión del análisis y obtener resultados más confiables. Esto es especialmente importante cuando los factores de bloqueo tienen un efecto significativo en la variable de respuesta.
